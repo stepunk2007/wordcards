@@ -2,8 +2,6 @@ package dev.words.bot;
 
 import dev.words.application.user.RegisterUser;
 import dev.words.application.word.GetMoreExamples;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
@@ -24,9 +22,6 @@ class MoreExamplesFlow {
 
     static final String PREFIX = "more:";
     static final String NO_MORE = "Больше примеров нет";
-    static final String FAILED = "Не получилось подготовить примеры, попробуй позже";
-
-    private static final Logger log = LoggerFactory.getLogger(MoreExamplesFlow.class);
 
     private final RegisterUser registerUser;
     private final GetMoreExamples getMoreExamples;
@@ -79,8 +74,7 @@ class MoreExamplesFlow {
             }
             replies.send(message.build());
         } catch (RuntimeException e) {
-            log.warn("Could not get more examples of lexeme {} for user {}", lexemeId, user.id(), e);
-            replies.execute(answer(query, FAILED));
+            replies.execute(answer(query, ErrorMessages.forUser(e)));
             // Give the button back so the user can try again.
             replies.execute(EditMessageReplyMarkup.builder()
                     .chatId(chatId)

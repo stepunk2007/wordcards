@@ -86,7 +86,7 @@ class MoreExamplesFlowTest {
 
         flow.onMore(Updates.callback(42, "more:5:3").getCallbackQuery(), replies);
 
-        assertThat(replies.get(1, AnswerCallbackQuery.class).getText()).isEqualTo(MoreExamplesFlow.FAILED);
+        assertThat(replies.get(1, AnswerCallbackQuery.class).getText()).contains("перегружен");
         var restored = replies.get(2, EditMessageReplyMarkup.class);
         assertThat(restored.getReplyMarkup().getKeyboard().getFirst().getFirst().getCallbackData())
                 .isEqualTo("more:5:3");

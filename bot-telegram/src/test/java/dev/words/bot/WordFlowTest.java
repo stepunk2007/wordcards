@@ -74,7 +74,7 @@ class WordFlowTest {
 
         flow.onWord(Updates.text(42, "borrow").getMessage(), replies);
 
-        assertThat(replies.get(1, EditMessageText.class).getText()).isEqualTo(WordFlow.FAILED);
+        assertThat(replies.get(1, EditMessageText.class).getText()).startsWith("Карточка готовилась слишком долго");
         assertThat(replies.get(1, EditMessageText.class).getReplyMarkup()).isNull();
     }
 

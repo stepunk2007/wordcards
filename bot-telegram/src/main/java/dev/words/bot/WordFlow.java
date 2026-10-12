@@ -1,10 +1,7 @@
 package dev.words.bot;
 
-import dev.words.application.error.NoActiveProfileException;
 import dev.words.application.user.RegisterUser;
 import dev.words.application.word.AddWord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -21,9 +18,6 @@ class WordFlow {
 
     static final String PREPARING = "Готовлю карточку…";
     static final String NO_PROFILE = "Сначала выбери язык, который учишь: /start";
-    static final String FAILED = "Не получилось подготовить карточку. Попробуй ещё раз чуть позже.";
-
-    private static final Logger log = LoggerFactory.getLogger(WordFlow.class);
 
     private final RegisterUser registerUser;
     private final AddWord addWord;
@@ -53,12 +47,8 @@ class WordFlow {
             text = CardFormatter.card(added);
             keyboard = MoreExamplesFlow.button(added.lexeme().id(),
                     Math.min(CardFormatter.EXAMPLES_ON_CARD, added.examples().size()));
-        } catch (NoActiveProfileException e) {
-            text = NO_PROFILE;
         } catch (RuntimeException e) {
-            // Specific messages for each failure come in task 7.6.
-            log.warn("Could not add word '{}' for user {}", message.getText(), user.id(), e);
-            text = FAILED;
+            text = ErrorMessages.forUser(e);
         }
 
         replies.execute(EditMessageText.builder()

@@ -116,6 +116,14 @@ class Onboarding {
         };
     }
 
+    /** For phrases like "на английском языке". */
+    static String languageNameAdjective(Language language) {
+        return switch (language) {
+            case ENGLISH -> "английском";
+            case RUSSIAN -> "русском";
+        };
+    }
+
     private static AnswerCallbackQuery answer(CallbackQuery query) {
         return AnswerCallbackQuery.builder().callbackQueryId(query.getId()).build();
     }
