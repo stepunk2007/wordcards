@@ -4,10 +4,13 @@ junit = "6.1.3"
 assertj = "3.27.7"
 spring-boot = "4.1.1"
 anthropic = "2.71.0"
+telegrambots = "10.3.0"
 
 [libraries]
 anthropic-java = { module = "com.anthropic:anthropic-java", version.ref = "anthropic" }
 spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter" }
+telegrambots-longpolling = { module = "org.telegram:telegrambots-longpolling", version.ref = "telegrambots" }
+telegrambots-client = { module = "org.telegram:telegrambots-client", version.ref = "telegrambots" }
 jackson-core = { module = "tools.jackson.core:jackson-core" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }

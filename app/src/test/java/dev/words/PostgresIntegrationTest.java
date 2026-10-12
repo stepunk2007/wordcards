@@ -8,7 +8,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  * Base class for tests that need the full application context and a real PostgreSQL.
  * The container is started once and shared by all subclasses.
  */
-@SpringBootTest
+@SpringBootTest(properties = "words.telegram.enabled=false")
 public abstract class PostgresIntegrationTest {
 
     @ServiceConnection

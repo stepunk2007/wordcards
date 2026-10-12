@@ -17,6 +17,9 @@ spring:
       ddl-auto: validate
 
 words:
+  telegram:
+    token: ${TELEGRAM_BOT_TOKEN:}
+    username: ${TELEGRAM_BOT_USERNAME:}
   limits:
     # New words per user per day (UTC), all languages together; 0 disables the limit.
     new-words-per-day: 20
