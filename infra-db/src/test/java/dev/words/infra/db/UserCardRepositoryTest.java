@@ -75,7 +75,7 @@ class UserCardRepositoryTest extends RepositoryTest {
         var card = cards.save(UserCard.newCard(profileId, lexeme("borrow"), NOW));
 
         var reviewed = new UserCard(card.id(), profileId, card.lexemeId(), CardState.REVIEW,
-                NOW.plus(Duration.ofDays(3)), 3.17, 5.28, 1, 0, card.createdAt());
+                NOW.plus(Duration.ofDays(3)), 3.17, 5.28, 1, 0, 0, NOW, card.createdAt());
         cards.save(reviewed);
 
         assertThat(cards.findById(card.id())).contains(reviewed);
@@ -122,6 +122,6 @@ class UserCardRepositoryTest extends RepositoryTest {
     }
 
     private UserCard cardDueAt(long lexemeId, Instant dueAt) {
-        return cards.save(new UserCard(null, profileId, lexemeId, CardState.REVIEW, dueAt, 1, 5, 1, 0, NOW));
+        return cards.save(new UserCard(null, profileId, lexemeId, CardState.REVIEW, dueAt, 1, 5, 1, 0, 0, NOW, NOW));
     }
 }

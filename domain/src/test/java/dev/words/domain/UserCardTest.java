@@ -23,7 +23,7 @@ class UserCardTest {
 
     @Test
     void cardScheduledInFutureIsNotDue() {
-        var card = new UserCard(1L, 1L, 2L, CardState.REVIEW, NOW.plus(Duration.ofDays(3)), 3.2, 5.1, 2, 0, NOW);
+        var card = new UserCard(1L, 1L, 2L, CardState.REVIEW, NOW.plus(Duration.ofDays(3)), 3.2, 5.1, 2, 0, 0, NOW, NOW);
 
         assertThat(card.isDue(NOW)).isFalse();
         assertThat(card.isDue(NOW.plus(Duration.ofDays(3)))).isTrue();
@@ -31,7 +31,7 @@ class UserCardTest {
 
     @Test
     void rejectsNegativeCounters() {
-        assertThatThrownBy(() -> new UserCard(null, 1L, 2L, CardState.NEW, NOW, 0, 0, -1, 0, NOW))
+        assertThatThrownBy(() -> new UserCard(null, 1L, 2L, CardState.NEW, NOW, 0, 0, -1, 0, 0, null, NOW))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }

@@ -117,7 +117,7 @@ public class InMemoryRepositories {
         public UserCard save(UserCard card) {
             var saved = new UserCard(card.id() != null ? card.id() : nextId++, card.profileId(), card.lexemeId(),
                     card.state(), card.dueAt(), card.stability(), card.difficulty(), card.reps(), card.lapses(),
-                    card.createdAt());
+                    card.step(), card.lastReviewedAt(), card.createdAt());
             all.removeIf(existing -> existing.id().equals(saved.id()));
             all.add(saved);
             return saved;

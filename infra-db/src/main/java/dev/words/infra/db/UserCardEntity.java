@@ -46,6 +46,12 @@ class UserCardEntity {
     @Column(name = "lapses", nullable = false)
     private int lapses;
 
+    @Column(name = "step", nullable = false)
+    private int step;
+
+    @Column(name = "last_reviewed_at")
+    private Instant lastReviewedAt;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -63,11 +69,14 @@ class UserCardEntity {
         entity.difficulty = card.difficulty();
         entity.reps = card.reps();
         entity.lapses = card.lapses();
+        entity.step = card.step();
+        entity.lastReviewedAt = card.lastReviewedAt();
         entity.createdAt = card.createdAt();
         return entity;
     }
 
     UserCard toDomain() {
-        return new UserCard(id, profileId, lexemeId, state, dueAt, stability, difficulty, reps, lapses, createdAt);
+        return new UserCard(id, profileId, lexemeId, state, dueAt, stability, difficulty, reps, lapses, step,
+                lastReviewedAt, createdAt);
     }
 }
