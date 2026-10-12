@@ -24,7 +24,6 @@ import dev.words.application.port.LlmPort;
 import dev.words.application.port.MoreExamplesRequest;
 import dev.words.application.port.WordCardRequest;
 import dev.words.application.port.WordNotInLanguageException;
-import org.springframework.stereotype.Component;
 
 import java.io.InterruptedIOException;
 import java.util.List;
@@ -33,13 +32,12 @@ import java.util.List;
  * Generates word cards with Claude using structured output, so the answer always matches the response records.
  * SDK errors are translated into {@link LlmException} so callers never see provider-specific types.
  */
-@Component
 class ClaudeLlmAdapter implements LlmPort {
 
     private final AnthropicClient client;
-    private final LlmProperties properties;
+    private final ProviderProperties properties;
 
-    ClaudeLlmAdapter(AnthropicClient client, LlmProperties properties) {
+    ClaudeLlmAdapter(AnthropicClient client, ProviderProperties properties) {
         this.client = client;
         this.properties = properties;
     }

@@ -177,7 +177,7 @@ class ClaudeLlmAdapterErrorsTest {
     }
 
     private ClaudeLlmAdapter adapter(Duration timeout) {
-        var properties = new LlmProperties("sk-test", "claude-haiku-5-5", 4000, timeout, 0);
+        var properties = new ProviderProperties("sk-test", "claude-haiku-5-5", 4000, timeout, 0);
         var client = AnthropicOkHttpClient.builder()
                 .apiKey("sk-test")
                 .baseUrl("http://127.0.0.1:" + server.getAddress().getPort())

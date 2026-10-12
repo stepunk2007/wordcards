@@ -14,8 +14,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class ClaudeLlmAdapterTest {
 
-    private final LlmProperties properties =
-            new LlmProperties("sk-test", "claude-haiku-5-5", 4000, Duration.ofSeconds(30), 2);
+    private final ProviderProperties properties =
+            new ProviderProperties("sk-test", "claude-haiku-5-5", 4000, Duration.ofSeconds(30), 2);
     private final ClaudeLlmAdapter adapter =
             new ClaudeLlmAdapter(AnthropicOkHttpClient.builder().apiKey("sk-test").build(), properties);
 

@@ -24,11 +24,21 @@ words:
     # New words per user per day (UTC), all languages together; 0 disables the limit.
     new-words-per-day: 20
   llm:
-    api-key: ${ANTHROPIC_API_KEY:}
-    model: claude-haiku-5-5
-    max-tokens: 4000
-    timeout: 30s
-    max-retries: 2
+    # Tried in this order: when one fails (outage, timeout, bad key), the next one answers.
+    # Providers without an API key are skipped.
+    providers: openai, anthropic
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+      model: gpt-6-luna
+      max-tokens: 4000
+      timeout: 20s
+      max-retries: 1
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY:}
+      model: claude-haiku-5-5
+      max-tokens: 4000
+      timeout: 30s
+      max-retries: 1
 
 management:
   endpoints:

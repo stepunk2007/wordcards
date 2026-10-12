@@ -4,6 +4,7 @@ dependencies {
 
     implementation(libs.spring.boot.starter)
     implementation(libs.anthropic.java)
+    implementation(libs.openai.java)
 
     testImplementation(platform(libs.spring.boot.dependencies))
     testImplementation(libs.spring.boot.starter.test)
