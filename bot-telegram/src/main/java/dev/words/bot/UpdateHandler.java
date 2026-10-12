@@ -1,46 +1,47 @@
 package dev.words.bot;
 
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.methods.botapimethods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
-import java.util.List;
 import java.util.Locale;
 
 /**
- * Routes an update to the flow that answers it. Has no Telegram I/O, so it is tested without a network.
+ * Routes an update to the flow that answers it. Answers go through {@link Replies}, so it is tested without
+ * a network.
  */
 @Component
 class UpdateHandler {
 
     private final TelegramProperties properties;
     private final Onboarding onboarding;
+    private final WordFlow wordFlow;
 
-    UpdateHandler(TelegramProperties properties, Onboarding onboarding) {
+    UpdateHandler(TelegramProperties properties, Onboarding onboarding, WordFlow wordFlow) {
         this.properties = properties;
         this.onboarding = onboarding;
+        this.wordFlow = wordFlow;
     }
 
-    List<BotApiMethod<?>> handle(Update update) {
+    void handle(Update update, Replies replies) {
         if (update.hasCallbackQuery()) {
             var query = update.getCallbackQuery();
             String data = query.getData() == null ? "" : query.getData();
             if (data.startsWith(Onboarding.LANGUAGE_PREFIX)) {
-                return onboarding.onLanguageChosen(query);
+                onboarding.onLanguageChosen(query).forEach(replies::execute);
+            } else if (data.startsWith(Onboarding.LEVEL_PREFIX)) {
+                onboarding.onLevelChosen(query).forEach(replies::execute);
             }
-            if (data.startsWith(Onboarding.LEVEL_PREFIX)) {
-                return onboarding.onLevelChosen(query);
-            }
-            return List.of();
+            return;
         }
         if (!update.hasMessage() || !update.getMessage().hasText()) {
-            return List.of();
+            return;
         }
         var message = update.getMessage();
         if (isCommand(message.getText(), "start")) {
-            return onboarding.start(message);
+            onboarding.start(message).forEach(replies::execute);
+        } else if (!message.getText().strip().startsWith("/")) {
+            wordFlow.onWord(message, replies);
         }
-        return List.of();
     }
 
     /**

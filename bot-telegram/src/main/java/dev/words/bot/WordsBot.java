@@ -3,7 +3,10 @@ package dev.words.bot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer;
+import org.telegram.telegrambots.meta.api.methods.botapimethods.BotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.message.Message;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
@@ -19,13 +22,13 @@ class WordsBot implements LongPollingUpdateConsumer, AutoCloseable {
 
     private static final Logger log = LoggerFactory.getLogger(WordsBot.class);
 
-    private final TelegramClient telegram;
     private final UpdateHandler handler;
+    private final Replies replies;
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
     WordsBot(TelegramClient telegram, UpdateHandler handler) {
-        this.telegram = telegram;
         this.handler = handler;
+        this.replies = new TelegramReplies(telegram);
     }
 
     @Override
@@ -35,10 +38,8 @@ class WordsBot implements LongPollingUpdateConsumer, AutoCloseable {
 
     void process(Update update) {
         try {
-            for (var reply : handler.handle(update)) {
-                telegram.execute(reply);
-            }
-        } catch (TelegramApiException | RuntimeException e) {
+            handler.handle(update, replies);
+        } catch (RuntimeException e) {
             log.error("Failed to process update {}", update.getUpdateId(), e);
         }
     }
@@ -46,5 +47,33 @@ class WordsBot implements LongPollingUpdateConsumer, AutoCloseable {
     @Override
     public void close() {
         executor.close();
+    }
+
+    private record TelegramReplies(TelegramClient telegram) implements Replies {
+
+        @Override
+        public Message send(SendMessage message) {
+            try {
+                return telegram.execute(message);
+            } catch (TelegramApiException e) {
+                throw new TelegramSendException(e);
+            }
+        }
+
+        @Override
+        public void execute(BotApiMethod<?> method) {
+            try {
+                telegram.execute(method);
+            } catch (TelegramApiException e) {
+                throw new TelegramSendException(e);
+            }
+        }
+    }
+
+    static class TelegramSendException extends RuntimeException {
+
+        TelegramSendException(TelegramApiException cause) {
+            super(cause.getMessage(), cause);
+        }
     }
 }

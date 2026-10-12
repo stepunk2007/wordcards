@@ -26,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class UpdateHandlerTest {
@@ -37,9 +38,11 @@ class UpdateHandlerTest {
     private final RegisterUser registerUser = mock(RegisterUser.class);
     private final CreateProfile createProfile = mock(CreateProfile.class);
     private final ListProfiles listProfiles = mock(ListProfiles.class);
+    private final WordFlow wordFlow = mock(WordFlow.class);
     private final UpdateHandler handler = new UpdateHandler(
             new TelegramProperties(true, "token", "words_test_bot"),
-            new Onboarding(registerUser, createProfile, listProfiles));
+            new Onboarding(registerUser, createProfile, listProfiles), wordFlow);
+    private final RecordingReplies replies = new RecordingReplies();
 
     @BeforeEach
     void setUp() {
@@ -50,10 +53,10 @@ class UpdateHandlerTest {
     @ParameterizedTest
     @ValueSource(strings = {"/start", "  /START ", "/start deep-link-payload", "/start@words_test_bot"})
     void startRegistersNewUserAndOffersLanguages(String text) {
-        var replies = handler.handle(Updates.text(TELEGRAM_ID, text));
+        handler.handle(Updates.text(TELEGRAM_ID, text), replies);
 
         verify(registerUser).register(TELEGRAM_ID);
-        var reply = (SendMessage) replies.getFirst();
+        var reply = replies.get(0, SendMessage.class);
         assertThat(reply.getChatId()).isEqualTo("42");
         assertThat(reply.getText()).isEqualTo(Onboarding.WELCOME);
         assertThat(buttons(reply.getReplyMarkup())).extracting(InlineKeyboardButton::getCallbackData)
@@ -65,7 +68,8 @@ class UpdateHandlerTest {
         var profile = new LearningProfile(3L, USER_ID, Language.ENGLISH, Language.RUSSIAN, CefrLevel.B1, null, NOW);
         when(listProfiles.list(USER_ID)).thenReturn(List.of(new ProfileSummary(profile, 12, true)));
 
-        var reply = (SendMessage) handler.handle(Updates.text(TELEGRAM_ID, "/start")).getFirst();
+        handler.handle(Updates.text(TELEGRAM_ID, "/start"), replies);
+        var reply = replies.get(0, SendMessage.class);
 
         assertThat(reply.getText()).contains("С возвращением", "английский", "B1");
         assertThat(reply.getReplyMarkup()).isNull();
@@ -73,10 +77,10 @@ class UpdateHandlerTest {
 
     @Test
     void choosingLanguageShowsLevels() {
-        var replies = handler.handle(Updates.callback(TELEGRAM_ID, "lang:en"));
+        handler.handle(Updates.callback(TELEGRAM_ID, "lang:en"), replies);
 
-        assertThat(replies.get(0)).isInstanceOf(AnswerCallbackQuery.class);
-        var edit = (EditMessageText) replies.get(1);
+        assertThat(replies.sent.get(0)).isInstanceOf(AnswerCallbackQuery.class);
+        var edit = replies.get(1, EditMessageText.class);
         assertThat(edit.getMessageId()).isEqualTo(77);
         assertThat(edit.getText()).contains("английский", "уровень");
         assertThat(buttons(edit.getReplyMarkup())).extracting(InlineKeyboardButton::getCallbackData)
@@ -86,11 +90,11 @@ class UpdateHandlerTest {
 
     @Test
     void choosingLevelCreatesEnglishProfileForRussianSpeaker() {
-        var replies = handler.handle(Updates.callback(TELEGRAM_ID, "level:en:B2"));
+        handler.handle(Updates.callback(TELEGRAM_ID, "level:en:B2"), replies);
 
         verify(createProfile).create(USER_ID, Language.ENGLISH, Language.RUSSIAN, CefrLevel.B2);
-        assertThat(replies.get(0)).isInstanceOf(AnswerCallbackQuery.class);
-        assertThat(((EditMessageText) replies.get(1)).getText()).contains("Готово", "B2");
+        assertThat(replies.sent.get(0)).isInstanceOf(AnswerCallbackQuery.class);
+        assertThat((replies.get(1, EditMessageText.class)).getText()).contains("Готово", "B2");
     }
 
     @Test
@@ -98,17 +102,29 @@ class UpdateHandlerTest {
         when(createProfile.create(USER_ID, Language.ENGLISH, Language.RUSSIAN, CefrLevel.A1))
                 .thenThrow(new ProfileAlreadyExistsException(Language.ENGLISH));
 
-        var replies = handler.handle(Updates.callback(TELEGRAM_ID, "level:en:A1"));
+        handler.handle(Updates.callback(TELEGRAM_ID, "level:en:A1"), replies);
 
-        assertThat(((EditMessageText) replies.get(1)).getText()).contains("уже есть");
+        assertThat((replies.get(1, EditMessageText.class)).getText()).contains("уже есть");
     }
 
     @Test
-    void ignoresStartForAnotherBotUnknownCallbacksAndOtherMessagesForNow() {
-        assertThat(handler.handle(Updates.text(TELEGRAM_ID, "/start@other_bot"))).isEmpty();
-        assertThat(handler.handle(Updates.callback(TELEGRAM_ID, "unknown"))).isEmpty();
-        assertThat(handler.handle(Updates.text(TELEGRAM_ID, "borrow"))).isEmpty();
-        assertThat(handler.handle(Updates.sticker(TELEGRAM_ID))).isEmpty();
+    void plainTextGoesToWordFlow() {
+        var update = Updates.text(TELEGRAM_ID, "borrow");
+
+        handler.handle(update, replies);
+
+        verify(wordFlow).onWord(update.getMessage(), replies);
+    }
+
+    @Test
+    void ignoresStartForAnotherBotUnknownCommandsCallbacksAndStickers() {
+        handler.handle(Updates.text(TELEGRAM_ID, "/start@other_bot"), replies);
+        handler.handle(Updates.text(TELEGRAM_ID, "/unknown"), replies);
+        handler.handle(Updates.callback(TELEGRAM_ID, "unknown"), replies);
+        handler.handle(Updates.sticker(TELEGRAM_ID), replies);
+
+        assertThat(replies.sent).isEmpty();
+        verifyNoInteractions(wordFlow);
     }
 
     private static List<InlineKeyboardButton> buttons(Object markup) {
