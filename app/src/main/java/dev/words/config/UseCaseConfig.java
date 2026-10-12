@@ -1,14 +1,17 @@
 package dev.words.config;
 
 import dev.words.application.port.LearningProfileRepository;
+import dev.words.application.port.UserCardRepository;
 import dev.words.application.port.UserRepository;
 import dev.words.application.profile.CreateProfile;
+import dev.words.application.profile.ListProfiles;
 import dev.words.application.profile.SwitchProfile;
 import dev.words.application.user.RegisterUser;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.time.Clock;
+import java.time.Duration;
 
 /**
  * Wires framework-free use cases from the application module into the Spring context.
@@ -16,9 +19,12 @@ import java.time.Clock;
 @Configuration
 class UseCaseConfig {
 
+    /**
+     * Ticks in microseconds, the precision of PostgreSQL timestamps, so saved and reloaded values are equal.
+     */
     @Bean
     Clock clock() {
-        return Clock.systemUTC();
+        return Clock.tick(Clock.systemUTC(), Duration.ofNanos(1_000));
     }
 
     @Bean
@@ -29,6 +35,11 @@ class UseCaseConfig {
     @Bean
     CreateProfile createProfile(UserRepository users, LearningProfileRepository profiles, Clock clock) {
         return new CreateProfile(users, profiles, clock);
+    }
+
+    @Bean
+    ListProfiles listProfiles(UserRepository users, LearningProfileRepository profiles, UserCardRepository cards) {
+        return new ListProfiles(users, profiles, cards);
     }
 
     @Bean

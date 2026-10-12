@@ -1,12 +1,16 @@
 package dev.words.application.profile;
 
 import dev.words.application.port.LearningProfileRepository;
+import dev.words.application.port.UserCardRepository;
 import dev.words.application.port.UserRepository;
 import dev.words.domain.Language;
 import dev.words.domain.LearningProfile;
 import dev.words.domain.User;
+import dev.words.domain.UserCard;
 
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +42,48 @@ class InMemoryRepositories {
         @Override
         public Optional<User> findByTelegramId(long telegramId) {
             return byId.values().stream().filter(user -> user.telegramId() == telegramId).findFirst();
+        }
+    }
+
+    static class Cards implements UserCardRepository {
+
+        final List<UserCard> all = new ArrayList<>();
+        private long nextId = 1000;
+
+        @Override
+        public UserCard save(UserCard card) {
+            var saved = new UserCard(card.id() != null ? card.id() : nextId++, card.profileId(), card.lexemeId(),
+                    card.state(), card.dueAt(), card.stability(), card.difficulty(), card.reps(), card.lapses(),
+                    card.createdAt());
+            all.removeIf(existing -> existing.id().equals(saved.id()));
+            all.add(saved);
+            return saved;
+        }
+
+        @Override
+        public Optional<UserCard> findById(long id) {
+            return all.stream().filter(card -> card.id() == id).findFirst();
+        }
+
+        @Override
+        public Optional<UserCard> findByProfileIdAndLexemeId(long profileId, long lexemeId) {
+            return all.stream()
+                    .filter(card -> card.profileId() == profileId && card.lexemeId() == lexemeId)
+                    .findFirst();
+        }
+
+        @Override
+        public List<UserCard> findDue(long profileId, Instant now, int limit) {
+            return all.stream()
+                    .filter(card -> card.profileId() == profileId && card.isDue(now))
+                    .sorted(Comparator.comparing(UserCard::dueAt))
+                    .limit(limit)
+                    .toList();
+        }
+
+        @Override
+        public long countByProfileId(long profileId) {
+            return all.stream().filter(card -> card.profileId() == profileId).count();
         }
     }
 
