@@ -1,0 +1,15 @@
+{
+  "lemma": "borrow",
+  "partOfSpeech": "verb",
+  "meaning": "брать взаймы",
+  "examples": [
+    { "text": "Can I borrow your pen?", "translation": "Можно взять твою ручку?", "level": "A1" },
+    { "text": "She borrowed a book from the library.", "translation": "Она взяла книгу в библиотеке.", "level": "A2" },
+    { "text": "I don't like to borrow money from friends.", "translation": "Я не люблю занимать деньги у друзей.", "level": "A2" },
+    { "text": "Who borrowed my umbrella?", "translation": "Кто взял мой зонт?", "level": "A2" },
+    { "text": "We are borrowing our neighbour's car this weekend.", "translation": "В эти выходные мы берём машину у соседа.", "level": "B1" },
+    { "text": "You can borrow up to five books at a time.", "translation": "Можно брать до пяти книг за раз.", "level": "B1" },
+    { "text": "He has never borrowed anything without asking.", "translation": "Он никогда ничего не брал без спроса.", "level": "B1" },
+    { "text": "If I could borrow some sugar, I would bake a cake.", "translation": "Если бы я мог одолжить немного сахара, я бы испёк торт.", "level": "B1" }
+  ]
+}
