@@ -1,3 +1,7 @@
+plugins {
+    alias(libs.plugins.spring.boot) apply false
+}
+
 subprojects {
     apply(plugin = "java-library")
 
