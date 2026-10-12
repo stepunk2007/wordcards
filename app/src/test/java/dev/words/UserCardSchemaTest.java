@@ -83,7 +83,8 @@ class UserCardSchemaTest extends PostgresIntegrationTest {
 
         jdbc.update("delete from learning_profile where id = ?", profileId);
 
-        assertThat(jdbc.queryForObject("select count(*) from review_log", Integer.class)).isZero();
+        assertThat(jdbc.queryForObject("select count(*) from review_log where user_card_id = ?", Integer.class, cardId))
+                .isZero();
         assertThat(jdbc.queryForObject("select count(*) from lexeme where id = ?", Integer.class, lexemeId)).isOne();
     }
 

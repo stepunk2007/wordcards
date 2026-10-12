@@ -55,6 +55,11 @@ class JpaUserCardRepository implements UserCardRepository {
     }
 
     @Override
+    public long countDue(long profileId, Instant now) {
+        return jpa.countByProfileIdAndDueAtLessThanEqual(profileId, now);
+    }
+
+    @Override
     public long countCreatedSince(Collection<Long> profileIds, Instant since) {
         return profileIds.isEmpty() ? 0 : jpa.countByProfileIdInAndCreatedAtGreaterThanEqual(profileIds, since);
     }

@@ -20,5 +20,7 @@ interface UserCardJpaRepository extends JpaRepository<UserCardEntity, Long> {
 
     long countByProfileId(Long profileId);
 
+    long countByProfileIdAndDueAtLessThanEqual(Long profileId, Instant now);
+
     long countByProfileIdInAndCreatedAtGreaterThanEqual(Collection<Long> profileIds, Instant since);
 }

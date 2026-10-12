@@ -6,6 +6,8 @@ import dev.words.application.port.LexemeRepository;
 import dev.words.domain.Example;
 import dev.words.domain.Lexeme;
 import dev.words.application.port.UserCardRepository;
+import dev.words.application.port.ReviewLogRepository;
+import dev.words.domain.ReviewLog;
 import dev.words.application.port.UserRepository;
 import dev.words.domain.Language;
 import dev.words.domain.LearningProfile;
@@ -160,10 +162,33 @@ public class InMemoryRepositories {
         }
 
         @Override
+        public long countDue(long profileId, Instant now) {
+            return all.stream().filter(card -> card.profileId() == profileId && card.isDue(now)).count();
+        }
+
+        @Override
         public long countCreatedSince(Collection<Long> profileIds, Instant since) {
             return all.stream()
                     .filter(card -> profileIds.contains(card.profileId()) && !card.createdAt().isBefore(since))
                     .count();
+        }
+    }
+
+    public static class ReviewLogs implements ReviewLogRepository {
+
+        public final List<ReviewLog> all = new ArrayList<>();
+        private long nextId = 1;
+
+        @Override
+        public ReviewLog save(ReviewLog log) {
+            var saved = new ReviewLog(nextId++, log.userCardId(), log.grade(), log.reviewedAt());
+            all.add(saved);
+            return saved;
+        }
+
+        @Override
+        public List<ReviewLog> findByUserCardId(long userCardId) {
+            return all.stream().filter(log -> log.userCardId() == userCardId).toList();
         }
     }
 

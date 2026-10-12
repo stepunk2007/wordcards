@@ -28,6 +28,11 @@ public interface UserCardRepository {
     long countByProfileId(long profileId);
 
     /**
+     * @return number of cards of the profile due at {@code now}
+     */
+    long countDue(long profileId, Instant now);
+
+    /**
      * @return number of cards added to any of the profiles at or after {@code since}
      */
     long countCreatedSince(Collection<Long> profileIds, Instant since);

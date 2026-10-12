@@ -5,16 +5,20 @@ import dev.words.application.port.LearningProfileRepository;
 import dev.words.application.port.LexemeRepository;
 import dev.words.application.port.LlmPort;
 import dev.words.application.port.PronunciationPort;
+import dev.words.application.port.ReviewLogRepository;
 import dev.words.application.port.UserCardRepository;
 import dev.words.application.port.UserRepository;
 import dev.words.application.profile.CreateProfile;
 import dev.words.application.profile.ListProfiles;
 import dev.words.application.profile.SwitchProfile;
+import dev.words.application.review.GetDueCards;
+import dev.words.application.review.ReviewCard;
 import dev.words.application.user.RegisterUser;
 import dev.words.application.word.AddWord;
 import dev.words.application.word.GetMoreExamples;
 import dev.words.application.word.ListWords;
 import dev.words.application.word.PronunciationResolver;
+import dev.words.domain.FsrsScheduler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -79,5 +83,22 @@ class UseCaseConfig {
     ListWords listWords(UserRepository users, LearningProfileRepository profiles, UserCardRepository cards,
                         LexemeRepository lexemes) {
         return new ListWords(users, profiles, cards, lexemes);
+    }
+
+    @Bean
+    FsrsScheduler fsrsScheduler() {
+        return new FsrsScheduler();
+    }
+
+    @Bean
+    GetDueCards getDueCards(UserRepository users, LearningProfileRepository profiles, UserCardRepository cards,
+                            LexemeRepository lexemes, Clock clock) {
+        return new GetDueCards(users, profiles, cards, lexemes, clock);
+    }
+
+    @Bean
+    ReviewCard reviewCard(LearningProfileRepository profiles, UserCardRepository cards,
+                          ReviewLogRepository reviewLogs, FsrsScheduler scheduler, Clock clock) {
+        return new ReviewCard(profiles, cards, reviewLogs, scheduler, clock);
     }
 }
