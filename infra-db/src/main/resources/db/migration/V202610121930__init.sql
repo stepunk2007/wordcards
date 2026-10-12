@@ -1,0 +1,1 @@
+-- Initial empty migration: verifies that Flyway is wired up.

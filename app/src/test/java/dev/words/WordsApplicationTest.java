@@ -10,8 +10,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-// DB health is checked against a real Postgres in the Testcontainers smoke test (task 1.5).
-@SpringBootTest(properties = "management.health.db.enabled=false")
+// No database here: Flyway and DB health run against a real Postgres in the Testcontainers smoke test (task 1.5).
+@SpringBootTest(properties = {"management.health.db.enabled=false", "spring.flyway.enabled=false"})
 @AutoConfigureMockMvc
 class WordsApplicationTest {
 
