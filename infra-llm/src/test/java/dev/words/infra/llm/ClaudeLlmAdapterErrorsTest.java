@@ -3,8 +3,10 @@ package dev.words.infra.llm;
 import com.anthropic.client.okhttp.AnthropicOkHttpClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpServer;
+import dev.words.application.port.GeneratedExample;
 import dev.words.application.port.LlmException;
 import dev.words.application.port.LlmException.Reason;
+import dev.words.application.port.MoreExamplesRequest;
 import dev.words.application.port.WordCardRequest;
 import dev.words.application.port.WordNotInLanguageException;
 import dev.words.domain.CefrLevel;
@@ -139,6 +141,26 @@ class ClaudeLlmAdapterErrorsTest {
         respondWithError(401, "authentication_error");
 
         assertReason(Duration.ofSeconds(5), Reason.MISCONFIGURED);
+    }
+
+    @Test
+    void returnsMoreExamples() throws IOException {
+        respondWithText(mapper.writeValueAsString(Map.of("examples", java.util.List.of(Map.of(
+                "text", "I borrowed his bike.", "translation", "Я взял его велосипед.", "level", "A2")))), "end_turn");
+
+        var examples = adapter(Duration.ofSeconds(5)).generateMoreExamples(new MoreExamplesRequest(
+                "borrow", Language.ENGLISH, Language.RUSSIAN, CefrLevel.A2, java.util.List.of(), 3));
+
+        assertThat(examples).extracting(GeneratedExample::text).containsExactly("I borrowed his bike.");
+    }
+
+    @Test
+    void moreExamplesFailuresUseSameReasons() throws IOException {
+        respondWithError(529, "overloaded_error");
+
+        assertThatThrownBy(() -> adapter(Duration.ofSeconds(5)).generateMoreExamples(new MoreExamplesRequest(
+                "borrow", Language.ENGLISH, Language.RUSSIAN, CefrLevel.A2, java.util.List.of(), 3)))
+                .isInstanceOfSatisfying(LlmException.class, e -> assertThat(e.reason()).isEqualTo(Reason.UNAVAILABLE));
     }
 
     @Test

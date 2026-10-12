@@ -7,6 +7,8 @@ import dev.words.application.profile.CreateProfile;
 import dev.words.application.user.RegisterUser;
 import dev.words.application.word.AddWord;
 import dev.words.application.word.AddedWord;
+import dev.words.application.word.GetMoreExamples;
+import dev.words.domain.Example;
 import dev.words.domain.CefrLevel;
 import dev.words.domain.Language;
 import org.junit.jupiter.api.Test;
@@ -22,6 +24,8 @@ import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class AddWordIntegrationTest extends PostgresIntegrationTest {
@@ -37,6 +41,9 @@ class AddWordIntegrationTest extends PostgresIntegrationTest {
 
     @Autowired
     AddWord addWord;
+
+    @Autowired
+    GetMoreExamples getMoreExamples;
 
     @Autowired
     JdbcTemplate jdbc;
@@ -75,6 +82,27 @@ class AddWordIntegrationTest extends PostgresIntegrationTest {
         assertThat(count("""
                 select count(*) from user_card c join lexeme l on l.id = c.lexeme_id
                 where l.normalized_text = 'persuade'""")).isEqualTo(6);
+    }
+
+    @Test
+    void moreExamplesAreGeneratedOnceAndSharedBetweenUsers() {
+        when(llm.generateWordCard(any())).thenReturn(card("acquire"));
+        when(llm.generateMoreExamples(any())).thenReturn(List.of(
+                new GeneratedExample("She acquired a taste for tea.", "Она полюбила чай.", CefrLevel.B1),
+                new GeneratedExample("They acquired a new car.", "Они приобрели новую машину.", CefrLevel.A2),
+                new GeneratedExample("He acquired the skill quickly.", "Он быстро освоил навык.", CefrLevel.B1)));
+        long first = userWithProfile(7201);
+        long second = userWithProfile(7202);
+        long lexemeId = addWord.add(first, "acquire").lexeme().id();
+        addWord.add(second, "acquire");
+
+        var page = getMoreExamples.next(first, lexemeId, 2);
+        var samePageForSecondUser = getMoreExamples.next(second, lexemeId, 2);
+
+        assertThat(page.examples()).extracting(Example::text)
+                .containsExactly("She acquired a taste for tea.", "They acquired a new car.", "He acquired the skill quickly.");
+        assertThat(samePageForSecondUser.examples()).isEqualTo(page.examples());
+        verify(llm, times(1)).generateMoreExamples(any());
     }
 
     private long userWithProfile(long telegramId) {

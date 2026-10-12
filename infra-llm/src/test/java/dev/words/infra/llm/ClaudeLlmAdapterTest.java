@@ -1,12 +1,14 @@
 package dev.words.infra.llm;
 
 import com.anthropic.client.okhttp.AnthropicOkHttpClient;
+import dev.words.application.port.MoreExamplesRequest;
 import dev.words.application.port.WordCardRequest;
 import dev.words.domain.CefrLevel;
 import dev.words.domain.Language;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,6 +37,24 @@ class ClaudeLlmAdapterTest {
                 Learned language: English
                 Native language: Russian
                 Learner's level: A2""");
+    }
+
+    @Test
+    void buildsMoreExamplesRequestListingExistingSentences() {
+        var params = adapter.buildParams(new MoreExamplesRequest("borrow", Language.ENGLISH, Language.RUSSIAN,
+                CefrLevel.A2, List.of("Can I borrow your pen?", "She borrowed a book."), 6)).rawParams();
+
+        assertThat(params.system().orElseThrow().asString()).isEqualTo(WordCardPrompt.MORE_EXAMPLES_SYSTEM);
+        assertThat(params.outputConfig().orElseThrow().toString()).contains("examples", "translation");
+        assertThat(params.messages().getFirst().content().asString()).isEqualTo("""
+                Word: borrow
+                Learned language: English
+                Native language: Russian
+                Learner's level: A2
+                Number of new sentences: 6
+                Existing sentences:
+                - Can I borrow your pen?
+                - She borrowed a book.""");
     }
 
     @Test

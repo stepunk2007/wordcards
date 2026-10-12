@@ -16,18 +16,21 @@ import com.anthropic.models.messages.StopReason;
 import com.anthropic.models.messages.StructuredMessage;
 import com.anthropic.models.messages.StructuredMessageCreateParams;
 import com.anthropic.models.messages.StructuredOutputConfig;
+import dev.words.application.port.GeneratedExample;
 import dev.words.application.port.GeneratedWordCard;
 import dev.words.application.port.LlmException;
 import dev.words.application.port.LlmException.Reason;
 import dev.words.application.port.LlmPort;
+import dev.words.application.port.MoreExamplesRequest;
 import dev.words.application.port.WordCardRequest;
 import dev.words.application.port.WordNotInLanguageException;
 import org.springframework.stereotype.Component;
 
 import java.io.InterruptedIOException;
+import java.util.List;
 
 /**
- * Generates word cards with Claude using structured output, so the answer always matches {@link WordCardResponse}.
+ * Generates word cards with Claude using structured output, so the answer always matches the response records.
  * SDK errors are translated into {@link LlmException} so callers never see provider-specific types.
  */
 @Component
@@ -43,32 +46,7 @@ class ClaudeLlmAdapter implements LlmPort {
 
     @Override
     public GeneratedWordCard generateWordCard(WordCardRequest request) {
-        StructuredMessage<WordCardResponse> message;
-        try {
-            message = client.messages().create(buildParams(request));
-        } catch (AnthropicException e) {
-            throw translate(e);
-        }
-
-        var stopReason = message.stopReason().orElse(null);
-        if (StopReason.REFUSAL.equals(stopReason)) {
-            throw new LlmException(Reason.REFUSED, "Claude refused to generate a card for '" + request.text() + "'");
-        }
-        if (!StopReason.END_TURN.equals(stopReason)) {
-            throw new LlmException(Reason.INVALID_RESPONSE, "Claude answer is incomplete, stop reason: " + stopReason);
-        }
-
-        WordCardResponse response;
-        try {
-            response = message.content().stream()
-                    .flatMap(block -> block.text().stream())
-                    .findFirst()
-                    .orElseThrow(() -> new LlmException(Reason.INVALID_RESPONSE, "Claude answer has no text"))
-                    .text();
-        } catch (AnthropicInvalidDataException e) {
-            throw new LlmException(Reason.INVALID_RESPONSE, "Claude answer is not valid JSON", e);
-        }
-
+        var response = call(buildParams(request), "a card for '" + request.text() + "'");
         if (!response.inLearnedLanguage()) {
             throw new WordNotInLanguageException(request.text(), request.language());
         }
@@ -79,18 +57,64 @@ class ClaudeLlmAdapter implements LlmPort {
         }
     }
 
+    @Override
+    public List<GeneratedExample> generateMoreExamples(MoreExamplesRequest request) {
+        var response = call(buildParams(request), "examples for '" + request.lemma() + "'");
+        try {
+            return response.toGeneratedExamples();
+        } catch (IllegalArgumentException | NullPointerException e) {
+            throw new LlmException(Reason.INVALID_RESPONSE, "Claude answer misses required fields", e);
+        }
+    }
+
     StructuredMessageCreateParams<WordCardResponse> buildParams(WordCardRequest request) {
+        return params(WordCardResponse.class, WordCardPrompt.SYSTEM, WordCardPrompt.userMessage(request));
+    }
+
+    StructuredMessageCreateParams<ExamplesResponse> buildParams(MoreExamplesRequest request) {
+        return params(ExamplesResponse.class, WordCardPrompt.MORE_EXAMPLES_SYSTEM,
+                WordCardPrompt.moreExamplesMessage(request));
+    }
+
+    private <T> StructuredMessageCreateParams<T> params(Class<T> responseType, String system, String userMessage) {
         return MessageCreateParams.builder()
                 .model(properties.model())
                 .maxTokens(properties.maxTokens())
-                .system(WordCardPrompt.SYSTEM)
+                .system(system)
                 // Simple generation task: low effort keeps latency and cost down.
-                .outputConfig(new StructuredOutputConfig.Builder<WordCardResponse>()
-                        .format(WordCardResponse.class)
+                .outputConfig(new StructuredOutputConfig.Builder<T>()
+                        .format(responseType)
                         .effort(OutputConfig.Effort.LOW)
                         .build())
-                .addUserMessage(WordCardPrompt.userMessage(request))
+                .addUserMessage(userMessage)
                 .build();
+    }
+
+    private <T> T call(StructuredMessageCreateParams<T> params, String what) {
+        StructuredMessage<T> message;
+        try {
+            message = client.messages().create(params);
+        } catch (AnthropicException e) {
+            throw translate(e);
+        }
+
+        var stopReason = message.stopReason().orElse(null);
+        if (StopReason.REFUSAL.equals(stopReason)) {
+            throw new LlmException(Reason.REFUSED, "Claude refused to generate " + what);
+        }
+        if (!StopReason.END_TURN.equals(stopReason)) {
+            throw new LlmException(Reason.INVALID_RESPONSE, "Claude answer is incomplete, stop reason: " + stopReason);
+        }
+
+        try {
+            return message.content().stream()
+                    .flatMap(block -> block.text().stream())
+                    .findFirst()
+                    .orElseThrow(() -> new LlmException(Reason.INVALID_RESPONSE, "Claude answer has no text"))
+                    .text();
+        } catch (AnthropicInvalidDataException e) {
+            throw new LlmException(Reason.INVALID_RESPONSE, "Claude answer is not valid JSON", e);
+        }
     }
 
     private static LlmException translate(AnthropicException e) {

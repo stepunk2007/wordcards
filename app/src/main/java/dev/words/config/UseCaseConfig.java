@@ -12,6 +12,7 @@ import dev.words.application.profile.ListProfiles;
 import dev.words.application.profile.SwitchProfile;
 import dev.words.application.user.RegisterUser;
 import dev.words.application.word.AddWord;
+import dev.words.application.word.GetMoreExamples;
 import dev.words.application.word.PronunciationResolver;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -63,5 +64,11 @@ class UseCaseConfig {
                     ExampleRepository examples, UserCardRepository cards, LlmPort llm,
                     PronunciationResolver pronunciations, Clock clock) {
         return new AddWord(users, profiles, lexemes, examples, cards, llm, pronunciations, clock);
+    }
+
+    @Bean
+    GetMoreExamples getMoreExamples(UserRepository users, LearningProfileRepository profiles,
+                                    LexemeRepository lexemes, ExampleRepository examples, LlmPort llm) {
+        return new GetMoreExamples(users, profiles, lexemes, examples, llm);
     }
 }

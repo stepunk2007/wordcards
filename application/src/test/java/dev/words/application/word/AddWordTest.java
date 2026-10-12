@@ -6,6 +6,7 @@ import dev.words.application.port.GeneratedExample;
 import dev.words.application.port.GeneratedWordCard;
 import dev.words.application.port.LlmException;
 import dev.words.application.port.LlmPort;
+import dev.words.application.port.MoreExamplesRequest;
 import dev.words.application.port.Pronunciation;
 import dev.words.application.port.WordCardRequest;
 import dev.words.application.port.WordNotInLanguageException;
@@ -180,6 +181,11 @@ class AddWordTest {
                 throw failure;
             }
             return new GeneratedWordCard(lemma, "verb", ipa, "брать взаймы", examples);
+        }
+
+        @Override
+        public List<GeneratedExample> generateMoreExamples(MoreExamplesRequest request) {
+            throw new UnsupportedOperationException();
         }
     }
 }

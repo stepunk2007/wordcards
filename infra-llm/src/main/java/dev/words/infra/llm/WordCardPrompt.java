@@ -1,5 +1,6 @@
 package dev.words.infra.llm;
 
+import dev.words.application.port.MoreExamplesRequest;
 import dev.words.application.port.WordCardRequest;
 import dev.words.domain.Language;
 
@@ -35,7 +36,40 @@ final class WordCardPrompt {
             - Order them from the easiest to the hardest.
             """.formatted(EXAMPLE_COUNT);
 
+    static final String MORE_EXAMPLES_SYSTEM = """
+            You write example sentences for a vocabulary card in a language learning app.
+            The card already has some sentences; write new ones that are different from all of them \
+            in situation and grammar.
+
+            Example sentences:
+            - Short and simple: everyday situations, common vocabulary, at or below the learner's level.
+            - Show the word in different forms and contexts (tenses, plural, questions, negatives).
+            - Never use rarer words than the word itself.
+            - Each sentence has a natural, not word-for-word, translation into the native language.
+            - Order them from the easiest to the hardest.
+            """;
+
     private WordCardPrompt() {
+    }
+
+    static String moreExamplesMessage(MoreExamplesRequest request) {
+        var existing = request.existing().isEmpty()
+                ? "(none)"
+                : String.join("\n", request.existing().stream().map(text -> "- " + text).toList());
+        return """
+                Word: %s
+                Learned language: %s
+                Native language: %s
+                Learner's level: %s
+                Number of new sentences: %d
+                Existing sentences:
+                %s""".formatted(
+                request.lemma(),
+                languageName(request.language()),
+                languageName(request.nativeLanguage()),
+                request.level(),
+                request.count(),
+                existing);
     }
 
     static String userMessage(WordCardRequest request) {
