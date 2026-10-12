@@ -3,6 +3,7 @@ package dev.words.application.port;
 import dev.words.domain.UserCard;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,4 +21,9 @@ public interface UserCardRepository {
     List<UserCard> findDue(long profileId, Instant now, int limit);
 
     long countByProfileId(long profileId);
+
+    /**
+     * @return number of cards added to any of the profiles at or after {@code since}
+     */
+    long countCreatedSince(Collection<Long> profileIds, Instant since);
 }

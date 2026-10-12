@@ -14,6 +14,7 @@ import dev.words.domain.UserCard;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -141,6 +142,13 @@ public class InMemoryRepositories {
         @Override
         public long countByProfileId(long profileId) {
             return all.stream().filter(card -> card.profileId() == profileId).count();
+        }
+
+        @Override
+        public long countCreatedSince(Collection<Long> profileIds, Instant since) {
+            return all.stream()
+                    .filter(card -> profileIds.contains(card.profileId()) && !card.createdAt().isBefore(since))
+                    .count();
         }
     }
 

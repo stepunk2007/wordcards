@@ -14,6 +14,7 @@ import dev.words.application.user.RegisterUser;
 import dev.words.application.word.AddWord;
 import dev.words.application.word.GetMoreExamples;
 import dev.words.application.word.PronunciationResolver;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -62,8 +63,9 @@ class UseCaseConfig {
     @Bean
     AddWord addWord(UserRepository users, LearningProfileRepository profiles, LexemeRepository lexemes,
                     ExampleRepository examples, UserCardRepository cards, LlmPort llm,
-                    PronunciationResolver pronunciations, Clock clock) {
-        return new AddWord(users, profiles, lexemes, examples, cards, llm, pronunciations, clock);
+                    PronunciationResolver pronunciations, Clock clock,
+                    @Value("${words.limits.new-words-per-day:20}") int newWordsPerDay) {
+        return new AddWord(users, profiles, lexemes, examples, cards, llm, pronunciations, clock, newWordsPerDay);
     }
 
     @Bean

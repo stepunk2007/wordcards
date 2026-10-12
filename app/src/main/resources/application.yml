@@ -17,6 +17,9 @@ spring:
       ddl-auto: validate
 
 words:
+  limits:
+    # New words per user per day (UTC), all languages together; 0 disables the limit.
+    new-words-per-day: 20
   llm:
     api-key: ${ANTHROPIC_API_KEY:}
     model: claude-haiku-5-5

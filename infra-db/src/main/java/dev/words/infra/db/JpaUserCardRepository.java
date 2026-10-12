@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,5 +46,10 @@ class JpaUserCardRepository implements UserCardRepository {
     @Override
     public long countByProfileId(long profileId) {
         return jpa.countByProfileId(profileId);
+    }
+
+    @Override
+    public long countCreatedSince(Collection<Long> profileIds, Instant since) {
+        return profileIds.isEmpty() ? 0 : jpa.countByProfileIdInAndCreatedAtGreaterThanEqual(profileIds, since);
     }
 }

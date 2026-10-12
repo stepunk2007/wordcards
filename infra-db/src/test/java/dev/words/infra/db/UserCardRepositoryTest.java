@@ -19,6 +19,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -89,6 +90,17 @@ class UserCardRepositoryTest extends RepositoryTest {
 
         assertThat(cards.findDue(profileId, NOW, 10)).containsExactly(dueYesterday, dueAnHourAgo, dueNow);
         assertThat(cards.findDue(profileId, NOW, 2)).containsExactly(dueYesterday, dueAnHourAgo);
+    }
+
+    @Test
+    void countsCardsCreatedSinceGivenTimeAcrossProfiles() {
+        cards.save(UserCard.newCard(profileId, lexeme("old"), NOW.minus(Duration.ofDays(1))));
+        cards.save(UserCard.newCard(profileId, lexeme("today-1"), NOW));
+        cards.save(UserCard.newCard(profileId, lexeme("today-2"), NOW.plus(Duration.ofHours(1))));
+
+        assertThat(cards.countCreatedSince(List.of(profileId), NOW)).isEqualTo(2);
+        assertThat(cards.countCreatedSince(List.of(profileId, 999_999L), NOW)).isEqualTo(2);
+        assertThat(cards.countCreatedSince(List.of(), NOW)).isZero();
     }
 
     private long lexeme(String text) {

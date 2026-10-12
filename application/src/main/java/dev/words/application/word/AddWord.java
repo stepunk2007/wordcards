@@ -17,6 +17,7 @@ import dev.words.domain.UserCard;
 import dev.words.domain.WordNormalizer;
 
 import java.time.Clock;
+import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -40,10 +41,15 @@ public class AddWord {
     private final LlmPort llm;
     private final PronunciationResolver pronunciations;
     private final Clock clock;
+    private final int dailyLimit;
 
+    /**
+     * @param dailyLimit new words a user may add per day across all languages; 0 or less means no limit
+     */
     public AddWord(UserRepository users, LearningProfileRepository profiles, LexemeRepository lexemes,
                    ExampleRepository examples, UserCardRepository cards, LlmPort llm,
-                   PronunciationResolver pronunciations, Clock clock) {
+                   PronunciationResolver pronunciations, Clock clock, int dailyLimit) {
+        this.dailyLimit = dailyLimit;
         this.users = users;
         this.profiles = profiles;
         this.lexemes = lexemes;
@@ -56,6 +62,7 @@ public class AddWord {
 
     /**
      * @throws InvalidWordException                                  if the text is blank or too long
+     * @throws DailyLimitExceededException                           if the user added too many new words today
      * @throws NoActiveProfileException                              if the user has not chosen a language yet
      * @throws dev.words.application.port.WordNotInLanguageException if the text is not a word of that language
      * @throws dev.words.application.port.LlmException               if a new card could not be generated
@@ -64,15 +71,44 @@ public class AddWord {
         String typed = validate(text);
         var profile = activeProfile(userId);
 
-        var lexeme = lexemes.findByLanguageAndNormalizedText(profile.targetLanguage(), WordNormalizer.normalize(typed))
-                .orElseGet(() -> generate(profile, typed));
+        var cached = lexemes.findByLanguageAndNormalizedText(profile.targetLanguage(), WordNormalizer.normalize(typed));
+        if (cached.isPresent()) {
+            var inDeck = cards.findByProfileIdAndLexemeId(profile.id(), cached.get().id());
+            if (inDeck.isPresent()) {
+                return result(profile, cached.get(), inDeck.get(), true);
+            }
+        }
+
+        // Checked before the LLM call: a word over the limit must not cost money.
+        checkDailyLimit(userId);
+        var lexeme = cached.orElseGet(() -> generate(profile, typed));
 
         var existing = cards.findByProfileIdAndLexemeId(profile.id(), lexeme.id());
-        var card = existing.orElseGet(() -> saveOrFind(
+        if (existing.isPresent()) {
+            return result(profile, lexeme, existing.get(), true);
+        }
+        var card = saveOrFind(
                 () -> cards.save(UserCard.newCard(profile.id(), lexeme.id(), clock.instant())),
-                () -> cards.findByProfileIdAndLexemeId(profile.id(), lexeme.id())));
+                () -> cards.findByProfileIdAndLexemeId(profile.id(), lexeme.id()));
+        return result(profile, lexeme, card, false);
+    }
 
-        return new AddedWord(profile, lexeme, examples.findByLexemeId(lexeme.id()), card, existing.isPresent());
+    private AddedWord result(LearningProfile profile, Lexeme lexeme, UserCard card, boolean alreadyInDeck) {
+        return new AddedWord(profile, lexeme, examples.findByLexemeId(lexeme.id()), card, alreadyInDeck);
+    }
+
+    /**
+     * Counts new words in all of the user's languages since midnight UTC.
+     */
+    private void checkDailyLimit(long userId) {
+        if (dailyLimit <= 0) {
+            return;
+        }
+        var startOfDay = clock.instant().truncatedTo(ChronoUnit.DAYS);
+        var profileIds = profiles.findByUserId(userId).stream().map(LearningProfile::id).toList();
+        if (cards.countCreatedSince(profileIds, startOfDay) >= dailyLimit) {
+            throw new DailyLimitExceededException(dailyLimit);
+        }
     }
 
     private static String validate(String text) {

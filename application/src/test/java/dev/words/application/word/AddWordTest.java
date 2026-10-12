@@ -45,7 +45,7 @@ class AddWordTest {
     private final PronunciationResolver pronunciations = new PronunciationResolver((language, text) ->
             Optional.ofNullable(dictionary.get(text)).map(ipa -> new Pronunciation(ipa, IpaSource.WIKTIONARY)));
     private final AddWord addWord =
-            new AddWord(users, profiles, lexemes, examples, cards, llm, pronunciations, CLOCK);
+            new AddWord(users, profiles, lexemes, examples, cards, llm, pronunciations, CLOCK, 0);
     private final CreateProfile createProfile = new CreateProfile(users, profiles, CLOCK);
 
     private long userId;
