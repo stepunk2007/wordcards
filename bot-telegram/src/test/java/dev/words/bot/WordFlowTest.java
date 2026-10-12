@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 
 import java.time.Instant;
 import java.util.List;
@@ -49,6 +50,10 @@ class WordFlowTest {
         assertThat(card.getMessageId()).isEqualTo(1000);
         assertThat(card.getParseMode()).isEqualTo(ParseMode.HTML);
         assertThat(card.getText()).startsWith("<b>borrow</b>").contains("брать взаймы");
+        var button = ((InlineKeyboardMarkup) card.getReplyMarkup())
+                .getKeyboard().getFirst().getFirst();
+        assertThat(button.getText()).isEqualTo("Ещё примеры");
+        assertThat(button.getCallbackData()).isEqualTo("more:1:0");
     }
 
     @Test
@@ -70,6 +75,7 @@ class WordFlowTest {
         flow.onWord(Updates.text(42, "borrow").getMessage(), replies);
 
         assertThat(replies.get(1, EditMessageText.class).getText()).isEqualTo(WordFlow.FAILED);
+        assertThat(replies.get(1, EditMessageText.class).getReplyMarkup()).isNull();
     }
 
     private static AddedWord borrow() {

@@ -64,7 +64,7 @@ public class GetMoreExamples {
         int to = Math.min(offset + PAGE_SIZE, cached.size());
         // An empty page means even generation found nothing new: stop offering the button.
         boolean hasMore = from < to && (to < cached.size() || cached.size() < MAX_EXAMPLES);
-        return new ExamplePage(cached.subList(from, to), to, hasMore);
+        return new ExamplePage(cached.subList(from, to), profile.nativeLanguage(), to, hasMore);
     }
 
     private List<Example> generateMore(LearningProfile profile, Lexeme lexeme, List<Example> cached) {

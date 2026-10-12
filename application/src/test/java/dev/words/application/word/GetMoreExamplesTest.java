@@ -77,6 +77,7 @@ class GetMoreExamplesTest {
         assertThat(request.count()).isEqualTo(GetMoreExamples.GENERATION_BATCH);
         assertThat(page.examples()).extracting(Example::text).containsExactly("cached 6", "cached 7", "new 0");
         assertThat(page.examples().getLast().translationIn(Language.RUSSIAN)).contains("новый 0");
+        assertThat(page.nativeLanguage()).isEqualTo(Language.RUSSIAN);
         assertThat(page.hasMore()).isTrue();
         assertThat(examples.findByLexemeId(lexemeId)).hasSize(14);
     }

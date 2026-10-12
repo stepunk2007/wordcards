@@ -15,11 +15,14 @@ class UpdateHandler {
     private final TelegramProperties properties;
     private final Onboarding onboarding;
     private final WordFlow wordFlow;
+    private final MoreExamplesFlow moreExamples;
 
-    UpdateHandler(TelegramProperties properties, Onboarding onboarding, WordFlow wordFlow) {
+    UpdateHandler(TelegramProperties properties, Onboarding onboarding, WordFlow wordFlow,
+                  MoreExamplesFlow moreExamples) {
         this.properties = properties;
         this.onboarding = onboarding;
         this.wordFlow = wordFlow;
+        this.moreExamples = moreExamples;
     }
 
     void handle(Update update, Replies replies) {
@@ -30,6 +33,8 @@ class UpdateHandler {
                 onboarding.onLanguageChosen(query).forEach(replies::execute);
             } else if (data.startsWith(Onboarding.LEVEL_PREFIX)) {
                 onboarding.onLevelChosen(query).forEach(replies::execute);
+            } else if (data.startsWith(MoreExamplesFlow.PREFIX)) {
+                moreExamples.onMore(query, replies);
             }
             return;
         }

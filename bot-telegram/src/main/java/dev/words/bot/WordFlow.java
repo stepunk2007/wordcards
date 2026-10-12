@@ -10,6 +10,7 @@ import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 
 /**
  * A plain text message is a word to learn: answer "Preparing the card…" at once, since generation takes seconds,
@@ -46,8 +47,12 @@ class WordFlow {
                 .build());
 
         String text;
+        InlineKeyboardMarkup keyboard = null;
         try {
-            text = CardFormatter.card(addWord.add(user.id(), message.getText()));
+            var added = addWord.add(user.id(), message.getText());
+            text = CardFormatter.card(added);
+            keyboard = MoreExamplesFlow.button(added.lexeme().id(),
+                    Math.min(CardFormatter.EXAMPLES_ON_CARD, added.examples().size()));
         } catch (NoActiveProfileException e) {
             text = NO_PROFILE;
         } catch (RuntimeException e) {
@@ -61,6 +66,7 @@ class WordFlow {
                 .messageId(placeholder.getMessageId())
                 .text(text)
                 .parseMode(ParseMode.HTML)
+                .replyMarkup(keyboard)
                 .build());
     }
 }
