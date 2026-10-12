@@ -1,6 +1,9 @@
 spring:
   application:
     name: words
+  config:
+    # Local secrets: .env in the repository root (bootRun runs from app/, java -jar from the root).
+    import: optional:file:.env[.properties],optional:file:../.env[.properties]
   threads:
     virtual:
       enabled: true
@@ -12,6 +15,14 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: validate
+
+words:
+  llm:
+    api-key: ${ANTHROPIC_API_KEY:}
+    model: claude-haiku-5-5
+    max-tokens: 4000
+    timeout: 30s
+    max-retries: 2
 
 management:
   endpoints:
