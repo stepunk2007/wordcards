@@ -8,6 +8,10 @@ spring:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:words}
     username: ${DB_USER:words}
     password: ${DB_PASSWORD:words}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
 
 management:
   endpoints:
