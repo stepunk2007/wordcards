@@ -26,6 +26,19 @@ final class Updates {
         }
     }
 
+    static Update callback(long userId, String data) {
+        try {
+            return MAPPER.readValue("""
+                    {"update_id": 3, "callback_query": {"id": "cb-1", "chat_instance": "ci", "data": %s,
+                      "from": {"id": %d, "is_bot": false, "first_name": "Stepan"},
+                      "message": {"message_id": 77, "date": 1760000000,
+                        "chat": {"id": %d, "type": "private"}, "text": "old"}}}
+                    """.formatted(MAPPER.writeValueAsString(data), userId, userId), Update.class);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     static Update sticker(long chatId) {
         try {
             return MAPPER.readValue("""
