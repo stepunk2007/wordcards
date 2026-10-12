@@ -10,7 +10,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
+// DB health is checked against a real Postgres in the Testcontainers smoke test (task 1.5).
+@SpringBootTest(properties = "management.health.db.enabled=false")
 @AutoConfigureMockMvc
 class WordsApplicationTest {
 
