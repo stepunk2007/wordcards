@@ -6,5 +6,9 @@ package dev.words.application.port;
  */
 public interface LlmPort {
 
+    /**
+     * @throws WordNotInLanguageException if the text is not a word of {@link WordCardRequest#language()}
+     * @throws LlmException               if the card could not be generated
+     */
     GeneratedWordCard generateWordCard(WordCardRequest request);
 }

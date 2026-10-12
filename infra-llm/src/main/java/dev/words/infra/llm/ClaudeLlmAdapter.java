@@ -1,17 +1,34 @@
 package dev.words.infra.llm;
 
 import com.anthropic.client.AnthropicClient;
+import com.anthropic.errors.AnthropicException;
+import com.anthropic.errors.AnthropicInvalidDataException;
+import com.anthropic.errors.AnthropicIoException;
+import com.anthropic.errors.BadRequestException;
+import com.anthropic.errors.CredentialResolutionException;
+import com.anthropic.errors.NoCredentialsException;
+import com.anthropic.errors.NotFoundException;
+import com.anthropic.errors.PermissionDeniedException;
+import com.anthropic.errors.UnauthorizedException;
 import com.anthropic.models.messages.MessageCreateParams;
 import com.anthropic.models.messages.OutputConfig;
+import com.anthropic.models.messages.StopReason;
+import com.anthropic.models.messages.StructuredMessage;
 import com.anthropic.models.messages.StructuredMessageCreateParams;
 import com.anthropic.models.messages.StructuredOutputConfig;
 import dev.words.application.port.GeneratedWordCard;
+import dev.words.application.port.LlmException;
+import dev.words.application.port.LlmException.Reason;
 import dev.words.application.port.LlmPort;
 import dev.words.application.port.WordCardRequest;
+import dev.words.application.port.WordNotInLanguageException;
 import org.springframework.stereotype.Component;
+
+import java.io.InterruptedIOException;
 
 /**
  * Generates word cards with Claude using structured output, so the answer always matches {@link WordCardResponse}.
+ * SDK errors are translated into {@link LlmException} so callers never see provider-specific types.
  */
 @Component
 class ClaudeLlmAdapter implements LlmPort {
@@ -26,14 +43,40 @@ class ClaudeLlmAdapter implements LlmPort {
 
     @Override
     public GeneratedWordCard generateWordCard(WordCardRequest request) {
-        var response = client.messages().create(buildParams(request));
-        return response.content().stream()
-                .flatMap(block -> block.text().stream())
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException(
-                        "Claude returned no text, stop reason: " + response.stopReason().orElse(null)))
-                .text()
-                .toGeneratedWordCard();
+        StructuredMessage<WordCardResponse> message;
+        try {
+            message = client.messages().create(buildParams(request));
+        } catch (AnthropicException e) {
+            throw translate(e);
+        }
+
+        var stopReason = message.stopReason().orElse(null);
+        if (StopReason.REFUSAL.equals(stopReason)) {
+            throw new LlmException(Reason.REFUSED, "Claude refused to generate a card for '" + request.text() + "'");
+        }
+        if (!StopReason.END_TURN.equals(stopReason)) {
+            throw new LlmException(Reason.INVALID_RESPONSE, "Claude answer is incomplete, stop reason: " + stopReason);
+        }
+
+        WordCardResponse response;
+        try {
+            response = message.content().stream()
+                    .flatMap(block -> block.text().stream())
+                    .findFirst()
+                    .orElseThrow(() -> new LlmException(Reason.INVALID_RESPONSE, "Claude answer has no text"))
+                    .text();
+        } catch (AnthropicInvalidDataException e) {
+            throw new LlmException(Reason.INVALID_RESPONSE, "Claude answer is not valid JSON", e);
+        }
+
+        if (!response.inLearnedLanguage()) {
+            throw new WordNotInLanguageException(request.text(), request.language());
+        }
+        try {
+            return response.toGeneratedWordCard();
+        } catch (IllegalArgumentException | NullPointerException e) {
+            throw new LlmException(Reason.INVALID_RESPONSE, "Claude answer misses required fields", e);
+        }
     }
 
     StructuredMessageCreateParams<WordCardResponse> buildParams(WordCardRequest request) {
@@ -48,5 +91,27 @@ class ClaudeLlmAdapter implements LlmPort {
                         .build())
                 .addUserMessage(WordCardPrompt.userMessage(request))
                 .build();
+    }
+
+    private static LlmException translate(AnthropicException e) {
+        return switch (e) {
+            case AnthropicIoException io when hasCause(io, InterruptedIOException.class) ->
+                    new LlmException(Reason.TIMEOUT, "Claude did not answer in time", e);
+            case UnauthorizedException _, PermissionDeniedException _, NotFoundException _, BadRequestException _,
+                 NoCredentialsException _, CredentialResolutionException _ ->
+                    new LlmException(Reason.MISCONFIGURED, "Claude API rejected the request: " + e.getMessage(), e);
+            case AnthropicInvalidDataException _ ->
+                    new LlmException(Reason.INVALID_RESPONSE, "Claude answer is not valid JSON", e);
+            default -> new LlmException(Reason.UNAVAILABLE, "Claude API is unavailable: " + e.getMessage(), e);
+        };
+    }
+
+    private static boolean hasCause(Throwable error, Class<? extends Throwable> type) {
+        for (Throwable cause = error; cause != null; cause = cause.getCause()) {
+            if (type.isInstance(cause)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

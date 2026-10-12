@@ -12,6 +12,10 @@ import java.util.List;
  * so field names and descriptions here are part of the prompt.
  */
 record WordCardResponse(
+        @JsonPropertyDescription("true if the input is a real word or phrase of the learned language, "
+                + "possibly with a typo or in an inflected form; false for other languages, gibberish or sentences. "
+                + "When false, leave the other fields empty")
+        boolean inLearnedLanguage,
         @JsonPropertyDescription("Dictionary form of the word or phrase, in the learned language")
         String lemma,
         @JsonPropertyDescription("Part of speech in English, e.g. noun, verb, adjective, phrasal verb, idiom")
@@ -30,6 +34,9 @@ record WordCardResponse(
             CefrLevel level) {
     }
 
+    /**
+     * @throws IllegalArgumentException or NullPointerException if required fields are missing or blank
+     */
     GeneratedWordCard toGeneratedWordCard() {
         var generatedExamples = examples == null ? List.<GeneratedExample>of() : examples.stream()
                 .map(example -> new GeneratedExample(example.text(), example.translation(), example.level()))

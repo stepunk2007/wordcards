@@ -16,6 +16,10 @@ final class WordCardPrompt {
     static final String SYSTEM = """
             You write vocabulary cards for a language learning app.
 
+            First check that the input is a word or phrase of the learned language. Accept typos and inflected \
+            forms. If it is in another language, is gibberish or is a whole sentence, set inLearnedLanguage to \
+            false, leave the other fields empty and stop.
+
             For the word or phrase the learner sends:
             - Give its dictionary form (lemma): "borrowed" becomes "borrow", "went" becomes "go". \
             Keep phrases and phrasal verbs whole.
