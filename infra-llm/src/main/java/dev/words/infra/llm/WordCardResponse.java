@@ -20,6 +20,8 @@ record WordCardResponse(
         String lemma,
         @JsonPropertyDescription("Part of speech in English, e.g. noun, verb, adjective, phrasal verb, idiom")
         String partOfSpeech,
+        @JsonPropertyDescription("IPA transcription of the lemma without slashes, British pronunciation for English")
+        String ipa,
         @JsonPropertyDescription("Short meaning in the learner's native language, 1-5 words, the most common sense first")
         String meaning,
         @JsonPropertyDescription("Simple example sentences using the word, easiest first")
@@ -41,6 +43,6 @@ record WordCardResponse(
         var generatedExamples = examples == null ? List.<GeneratedExample>of() : examples.stream()
                 .map(example -> new GeneratedExample(example.text(), example.translation(), example.level()))
                 .toList();
-        return new GeneratedWordCard(lemma, partOfSpeech, meaning, generatedExamples);
+        return new GeneratedWordCard(lemma, partOfSpeech, ipa, meaning, generatedExamples);
     }
 }

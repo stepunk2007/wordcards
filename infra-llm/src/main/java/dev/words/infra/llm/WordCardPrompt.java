@@ -23,6 +23,7 @@ final class WordCardPrompt {
             For the word or phrase the learner sends:
             - Give its dictionary form (lemma): "borrowed" becomes "borrow", "went" becomes "go". \
             Keep phrases and phrasal verbs whole.
+            - Give the IPA transcription of the lemma, without slashes; British pronunciation for English.
             - Give a short meaning in the learner's native language: 1-5 words, the most common sense first.
             - Write %d example sentences that use the word.
 

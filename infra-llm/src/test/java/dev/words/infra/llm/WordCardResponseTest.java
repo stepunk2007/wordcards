@@ -25,6 +25,7 @@ class WordCardResponseTest {
 
         assertThat(card.lemma()).isEqualTo("borrow");
         assertThat(card.partOfSpeech()).isEqualTo("verb");
+        assertThat(card.ipa()).isEqualTo("ˈbɒrəʊ");
         assertThat(card.meaning()).isEqualTo("брать взаймы");
         assertThat(card.examples()).hasSize(8);
         assertThat(card.examples().getFirst())

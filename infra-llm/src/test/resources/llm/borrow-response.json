@@ -2,6 +2,7 @@
   "inLearnedLanguage": true,
   "lemma": "borrow",
   "partOfSpeech": "verb",
+  "ipa": "ˈbɒrəʊ",
   "meaning": "брать взаймы",
   "examples": [
     { "text": "Can I borrow your pen?", "translation": "Можно взять твою ручку?", "level": "A1" },

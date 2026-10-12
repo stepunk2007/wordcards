@@ -27,7 +27,7 @@ class ClaudeLlmAdapterTest {
         assertThat(params.system().orElseThrow().asString()).isEqualTo(WordCardPrompt.SYSTEM);
 
         String schema = params.outputConfig().orElseThrow().toString();
-        assertThat(schema).contains("lemma", "partOfSpeech", "meaning", "examples", "translation", "A1", "C2");
+        assertThat(schema).contains("lemma", "partOfSpeech", "ipa", "meaning", "examples", "translation", "A1", "C2");
 
         String userMessage = params.messages().getFirst().content().asString();
         assertThat(userMessage).isEqualTo("""
