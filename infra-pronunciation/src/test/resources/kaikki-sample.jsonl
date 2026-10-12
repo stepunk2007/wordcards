@@ -1,0 +1,10 @@
+{"word": "dictionary", "lang_code": "en", "pos": "noun", "sounds": [{"tags": ["Received-Pronunciation"], "ipa": "/ˈdɪk.ʃə.nə.ɹi/"}, {"tags": ["Received-Pronunciation"], "ipa": "/ˈdɪk.ʃən.ɹi/"}, {"tags": ["US"], "enpr": "dĭk'shə-nĕr-ē"}, {"ipa": "/ˈdɪk.ʃəˌnɛ.ɹi/", "tags": ["US"]}, {"audio": "En-uk-dictionary.ogg", "tags": ["Received-Pronunciation"]}], "translations": [{"lang_code": "ru", "word": "словарь"}]}
+{"word": "borrow", "lang_code": "en", "pos": "verb", "sounds": [{"ipa": "/ˈbɑɹoʊ/", "tags": ["General-American"]}]}
+{"word": "Borrow", "lang_code": "en", "pos": "name", "sounds": [{"ipa": "/ˈbɒɹəʊ/", "tags": ["UK"]}]}
+{"word": "tomato", "lang_code": "en", "pos": "noun", "sounds": [{"ipa": "[təˈmɑːtəʊ]", "tags": ["UK"]}, {"ipa": "/təˈmɑːtəʊ/"}]}
+{"word": "look up", "lang_code": "en", "pos": "verb", "sounds": [{"ipa": "/lʊk ˈʌp/"}]}
+{"word": "hund", "lang_code": "de", "pos": "noun", "sounds": [{"ipa": "/hʊnt/"}]}
+{"word": "silent", "lang_code": "en", "pos": "adj", "sounds": [{"rhymes": "-aɪlənt"}]}
+{"word": "nosounds", "lang_code": "en", "pos": "noun"}
+this line is broken {
+{"word": "don’t", "lang_code": "en", "pos": "verb", "sounds": [{"ipa": "/dəʊnt/", "tags": ["Received-Pronunciation"]}]}
