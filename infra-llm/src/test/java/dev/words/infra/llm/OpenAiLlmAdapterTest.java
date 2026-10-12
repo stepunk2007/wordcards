@@ -135,6 +135,20 @@ class OpenAiLlmAdapterTest {
     }
 
     @Test
+    void rateLimitIsUnavailable() throws IOException {
+        respondWithError(429, "rate_limit_exceeded");
+
+        assertReason(Duration.ofSeconds(5), Reason.UNAVAILABLE);
+    }
+
+    @Test
+    void emptyBalanceIsMisconfiguration() throws IOException {
+        respondWithError(429, "insufficient_quota");
+
+        assertReason(Duration.ofSeconds(5), Reason.MISCONFIGURED);
+    }
+
+    @Test
     void invalidKeyIsMisconfiguration() throws IOException {
         respondWithError(401, "invalid_api_key");
 

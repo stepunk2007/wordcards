@@ -7,6 +7,7 @@ import com.openai.errors.OpenAIException;
 import com.openai.errors.OpenAIInvalidDataException;
 import com.openai.errors.OpenAIIoException;
 import com.openai.errors.PermissionDeniedException;
+import com.openai.errors.RateLimitException;
 import com.openai.errors.UnauthorizedException;
 import com.openai.models.chat.completions.ChatCompletion;
 import com.openai.models.chat.completions.ChatCompletionCreateParams;
@@ -112,6 +113,9 @@ class OpenAiLlmAdapter implements LlmPort {
         return switch (e) {
             case OpenAIIoException io when hasCause(io, InterruptedIOException.class) ->
                     new LlmException(Reason.TIMEOUT, "OpenAI did not answer in time", e);
+            // 429 is also how OpenAI reports an empty balance; waiting will not help, the operator must pay.
+            case RateLimitException rate when rate.code().filter("insufficient_quota"::equals).isPresent() ->
+                    new LlmException(Reason.MISCONFIGURED, "OpenAI account has no credits: " + e.getMessage(), e);
             case UnauthorizedException _, PermissionDeniedException _, NotFoundException _, BadRequestException _ ->
                     new LlmException(Reason.MISCONFIGURED, "OpenAI API rejected the request: " + e.getMessage(), e);
             case OpenAIInvalidDataException _ ->
