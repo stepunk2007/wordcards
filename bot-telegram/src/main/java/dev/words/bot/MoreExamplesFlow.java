@@ -2,6 +2,8 @@ package dev.words.bot;
 
 import dev.words.application.user.RegisterUser;
 import dev.words.application.word.GetMoreExamples;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
@@ -22,6 +24,8 @@ class MoreExamplesFlow {
 
     static final String PREFIX = "more:";
     static final String NO_MORE = "Больше примеров нет";
+
+    private static final Logger log = LoggerFactory.getLogger(MoreExamplesFlow.class);
 
     private final RegisterUser registerUser;
     private final GetMoreExamples getMoreExamples;
@@ -47,7 +51,10 @@ class MoreExamplesFlow {
         var user = registerUser.register(query.getFrom().getId());
         long chatId = query.getMessage().getChatId();
 
-        // Removing the old button first stops a second tap while examples are being generated.
+        // Telegram accepts the answer only for about 10 seconds after the tap, and generating examples can take
+        // longer: answer right away, before the slow part, and report the outcome with a message.
+        answerQuietly(query, replies);
+        // Removing the old button stops a second tap while examples are being generated.
         replies.execute(EditMessageReplyMarkup.builder()
                 .chatId(chatId)
                 .messageId(query.getMessage().getMessageId())
@@ -56,10 +63,9 @@ class MoreExamplesFlow {
         try {
             var page = getMoreExamples.next(user.id(), lexemeId, offset);
             if (page.examples().isEmpty()) {
-                replies.execute(answer(query, NO_MORE));
+                replies.send(SendMessage.builder().chatId(chatId).text(NO_MORE + ".").build());
                 return;
             }
-            replies.execute(answer(query, null));
 
             var text = new StringBuilder();
             for (int i = 0; i < page.examples().size(); i++) {
@@ -74,7 +80,11 @@ class MoreExamplesFlow {
             }
             replies.send(message.build());
         } catch (RuntimeException e) {
-            replies.execute(answer(query, ErrorMessages.forUser(e)));
+            replies.send(SendMessage.builder()
+                    .chatId(chatId)
+                    .text(ErrorMessages.forUser(e))
+                    .parseMode(ParseMode.HTML)
+                    .build());
             // Give the button back so the user can try again.
             replies.execute(EditMessageReplyMarkup.builder()
                     .chatId(chatId)
@@ -84,7 +94,14 @@ class MoreExamplesFlow {
         }
     }
 
-    private static AnswerCallbackQuery answer(CallbackQuery query, String text) {
-        return AnswerCallbackQuery.builder().callbackQueryId(query.getId()).text(text).build();
+    /**
+     * The answer only stops the button's spinner; if Telegram rejects it (e.g. a stale tap), the flow goes on.
+     */
+    private static void answerQuietly(CallbackQuery query, Replies replies) {
+        try {
+            replies.execute(AnswerCallbackQuery.builder().callbackQueryId(query.getId()).build());
+        } catch (RuntimeException e) {
+            log.debug("Could not answer callback query {}: {}", query.getId(), e.getMessage());
+        }
     }
 }

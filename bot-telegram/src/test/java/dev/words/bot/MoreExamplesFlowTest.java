@@ -11,6 +11,7 @@ import dev.words.domain.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
+import org.telegram.telegrambots.meta.api.methods.botapimethods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -38,16 +39,19 @@ class MoreExamplesFlowTest {
     }
 
     @Test
-    void sendsNextExamplesWithNewButtonAndRemovesOldOne() {
-        when(getMoreExamples.next(7L, 5L, 3)).thenReturn(new ExamplePage(
-                List.of(example("Fourth."), example("Fifth."), example("Sixth.")), Language.RUSSIAN, 6, true));
+    void answersTapBeforeSlowGenerationThenSendsExamples() {
+        when(getMoreExamples.next(7L, 5L, 3)).thenAnswer(invocation -> {
+            // Generation may take longer than Telegram waits for the answer: it must already be sent.
+            assertThat(replies.sent).first().isInstanceOf(AnswerCallbackQuery.class);
+            return new ExamplePage(List.of(example("Fourth."), example("Fifth."), example("Sixth.")),
+                    Language.RUSSIAN, 6, true);
+        });
 
         flow.onMore(Updates.callback(42, "more:5:3").getCallbackQuery(), replies);
 
-        var removed = replies.get(0, EditMessageReplyMarkup.class);
+        var removed = replies.get(1, EditMessageReplyMarkup.class);
         assertThat(removed.getMessageId()).isEqualTo(77);
         assertThat(removed.getReplyMarkup()).isNull();
-        assertThat(replies.get(1, AnswerCallbackQuery.class).getText()).isNull();
         var message = replies.get(2, SendMessage.class);
         assertThat(message.getText()).isEqualTo("""
                 4. Fourth.
@@ -61,6 +65,26 @@ class MoreExamplesFlowTest {
     }
 
     @Test
+    void staleTapThatTelegramRejectsStillGetsExamples() {
+        var rejectingAnswers = new RecordingReplies() {
+            @Override
+            public void execute(BotApiMethod<?> method) {
+                if (method instanceof AnswerCallbackQuery) {
+                    throw new IllegalStateException("[400] Bad Request: query is too old");
+                }
+                super.execute(method);
+            }
+        };
+        when(getMoreExamples.next(7L, 5L, 3)).thenReturn(
+                new ExamplePage(List.of(example("Fourth.")), Language.RUSSIAN, 4, true));
+
+        flow.onMore(Updates.callback(42, "more:5:3").getCallbackQuery(), rejectingAnswers);
+
+        assertThat(rejectingAnswers.sent).last().isInstanceOfSatisfying(SendMessage.class,
+                message -> assertThat(message.getText()).startsWith("4. Fourth."));
+    }
+
+    @Test
     void lastPageHasNoButton() {
         when(getMoreExamples.next(7L, 5L, 27)).thenReturn(
                 new ExamplePage(List.of(example("Last.")), Language.RUSSIAN, 28, false));
@@ -71,23 +95,22 @@ class MoreExamplesFlowTest {
     }
 
     @Test
-    void emptyPageTellsThereAreNoMore() {
+    void emptyPageTellsThereAreNoMoreWithMessage() {
         when(getMoreExamples.next(7L, 5L, 30)).thenReturn(new ExamplePage(List.of(), Language.RUSSIAN, 30, false));
 
         flow.onMore(Updates.callback(42, "more:5:30").getCallbackQuery(), replies);
 
-        assertThat(replies.get(1, AnswerCallbackQuery.class).getText()).isEqualTo(MoreExamplesFlow.NO_MORE);
-        assertThat(replies.sent).hasSize(2);
+        assertThat(replies.get(2, SendMessage.class).getText()).isEqualTo("Больше примеров нет.");
     }
 
     @Test
-    void failureGivesTheButtonBack() {
+    void failureIsExplainedWithMessageAndButtonComesBack() {
         when(getMoreExamples.next(7L, 5L, 3)).thenThrow(new LlmException(LlmException.Reason.UNAVAILABLE, "down"));
 
         flow.onMore(Updates.callback(42, "more:5:3").getCallbackQuery(), replies);
 
-        assertThat(replies.get(1, AnswerCallbackQuery.class).getText()).contains("перегружен");
-        var restored = replies.get(2, EditMessageReplyMarkup.class);
+        assertThat(replies.get(2, SendMessage.class).getText()).contains("перегружен");
+        var restored = replies.get(3, EditMessageReplyMarkup.class);
         assertThat(restored.getReplyMarkup().getKeyboard().getFirst().getFirst().getCallbackData())
                 .isEqualTo("more:5:3");
     }
