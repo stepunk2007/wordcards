@@ -103,6 +103,20 @@ class UserCardRepositoryTest extends RepositoryTest {
         assertThat(cards.countCreatedSince(List.of(), NOW)).isZero();
     }
 
+    @Test
+    void pagesThroughDeckNewestFirst() {
+        for (int i = 1; i <= 5; i++) {
+            cards.save(UserCard.newCard(profileId, lexeme("page-" + i), NOW.plus(Duration.ofMinutes(i))));
+        }
+
+        var firstPage = cards.findByProfileId(profileId, 0, 2);
+        var lastPage = cards.findByProfileId(profileId, 4, 2);
+
+        assertThat(firstPage).extracting(UserCard::createdAt)
+                .containsExactly(NOW.plus(Duration.ofMinutes(5)), NOW.plus(Duration.ofMinutes(4)));
+        assertThat(lastPage).extracting(UserCard::createdAt).containsExactly(NOW.plus(Duration.ofMinutes(1)));
+    }
+
     private long lexeme(String text) {
         return lexemes.save(Lexeme.create(Language.ENGLISH, text, null, null, null, Map.of())).id();
     }

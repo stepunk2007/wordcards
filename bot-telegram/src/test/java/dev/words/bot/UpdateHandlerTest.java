@@ -40,9 +40,10 @@ class UpdateHandlerTest {
     private final ListProfiles listProfiles = mock(ListProfiles.class);
     private final WordFlow wordFlow = mock(WordFlow.class);
     private final MoreExamplesFlow moreExamples = mock(MoreExamplesFlow.class);
+    private final WordsListFlow wordsList = mock(WordsListFlow.class);
     private final UpdateHandler handler = new UpdateHandler(
             new TelegramProperties(true, "token", "words_test_bot"),
-            new Onboarding(registerUser, createProfile, listProfiles), wordFlow, moreExamples);
+            new Onboarding(registerUser, createProfile, listProfiles), wordFlow, moreExamples, wordsList);
     private final RecordingReplies replies = new RecordingReplies();
 
     @BeforeEach
@@ -124,6 +125,19 @@ class UpdateHandlerTest {
         handler.handle(update, replies);
 
         verify(moreExamples).onMore(update.getCallbackQuery(), replies);
+    }
+
+    @Test
+    void wordsCommandAndPageButtonsGoToWordsList() {
+        var command = Updates.text(TELEGRAM_ID, "/words");
+        var pageButton = Updates.callback(TELEGRAM_ID, "words:2");
+
+        handler.handle(command, replies);
+        handler.handle(pageButton, replies);
+
+        verify(wordsList).onCommand(command.getMessage(), replies);
+        verify(wordsList).onPage(pageButton.getCallbackQuery(), replies);
+        verifyNoInteractions(wordFlow);
     }
 
     @Test

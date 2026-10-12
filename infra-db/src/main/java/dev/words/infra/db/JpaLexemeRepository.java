@@ -6,6 +6,8 @@ import dev.words.domain.Lexeme;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -27,6 +29,11 @@ class JpaLexemeRepository implements LexemeRepository {
     @Override
     public Optional<Lexeme> findById(long id) {
         return jpa.findById(id).map(LexemeEntity::toDomain);
+    }
+
+    @Override
+    public List<Lexeme> findAllById(Collection<Long> ids) {
+        return jpa.findAllById(ids).stream().map(LexemeEntity::toDomain).toList();
     }
 
     @Override

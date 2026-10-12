@@ -20,6 +20,11 @@ public interface UserCardRepository {
      */
     List<UserCard> findDue(long profileId, Instant now, int limit);
 
+    /**
+     * @return a page of the profile's deck, newest cards first
+     */
+    List<UserCard> findByProfileId(long profileId, int offset, int limit);
+
     long countByProfileId(long profileId);
 
     /**

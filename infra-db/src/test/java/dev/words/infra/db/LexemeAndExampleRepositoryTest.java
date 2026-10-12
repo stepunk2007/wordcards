@@ -51,6 +51,14 @@ class LexemeAndExampleRepositoryTest extends RepositoryTest {
     }
 
     @Test
+    void findsSeveralLexemesById() {
+        var a = lexemes.save(Lexeme.create(Language.ENGLISH, "alpha", null, null, null, Map.of()));
+        var b = lexemes.save(Lexeme.create(Language.ENGLISH, "beta", null, null, null, Map.of()));
+
+        assertThat(lexemes.findAllById(List.of(a.id(), b.id(), 999_999L))).containsExactlyInAnyOrder(a, b);
+    }
+
+    @Test
     void duplicateLexemeIsRejected() {
         lexemes.save(Lexeme.create(Language.ENGLISH, "Look up", "phrasal verb", null, null, Map.of()));
 

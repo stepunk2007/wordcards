@@ -44,6 +44,12 @@ class JpaUserCardRepository implements UserCardRepository {
     }
 
     @Override
+    public List<UserCard> findByProfileId(long profileId, int offset, int limit) {
+        return jpa.findByProfileIdOrderByCreatedAtDescIdDesc(profileId, new OffsetPageable(offset, limit))
+                .stream().map(UserCardEntity::toDomain).toList();
+    }
+
+    @Override
     public long countByProfileId(long profileId) {
         return jpa.countByProfileId(profileId);
     }

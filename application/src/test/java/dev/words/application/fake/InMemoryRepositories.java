@@ -76,6 +76,11 @@ public class InMemoryRepositories {
         }
 
         @Override
+        public List<Lexeme> findAllById(Collection<Long> ids) {
+            return byId.values().stream().filter(lexeme -> ids.contains(lexeme.id())).toList();
+        }
+
+        @Override
         public Optional<Lexeme> findByLanguageAndNormalizedText(Language language, String normalizedText) {
             return byId.values().stream()
                     .filter(l -> l.language() == language && l.normalizedText().equals(normalizedText))
@@ -135,6 +140,16 @@ public class InMemoryRepositories {
             return all.stream()
                     .filter(card -> card.profileId() == profileId && card.isDue(now))
                     .sorted(Comparator.comparing(UserCard::dueAt))
+                    .limit(limit)
+                    .toList();
+        }
+
+        @Override
+        public List<UserCard> findByProfileId(long profileId, int offset, int limit) {
+            return all.stream()
+                    .filter(card -> card.profileId() == profileId)
+                    .sorted(Comparator.comparing(UserCard::createdAt).thenComparing(UserCard::id).reversed())
+                    .skip(offset)
                     .limit(limit)
                     .toList();
         }
