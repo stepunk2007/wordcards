@@ -1,6 +1,10 @@
-package dev.words.application.profile;
+package dev.words.application.fake;
 
+import dev.words.application.port.ExampleRepository;
 import dev.words.application.port.LearningProfileRepository;
+import dev.words.application.port.LexemeRepository;
+import dev.words.domain.Example;
+import dev.words.domain.Lexeme;
 import dev.words.application.port.UserCardRepository;
 import dev.words.application.port.UserRepository;
 import dev.words.domain.Language;
@@ -16,12 +20,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-class InMemoryRepositories {
+public class InMemoryRepositories {
 
-    static class Users implements UserRepository {
+    public static class Users implements UserRepository {
 
-        final Map<Long, User> byId = new LinkedHashMap<>();
-        int saves;
+        public final Map<Long, User> byId = new LinkedHashMap<>();
+        public int saves;
         private long nextId = 1;
 
         @Override
@@ -45,9 +49,62 @@ class InMemoryRepositories {
         }
     }
 
-    static class Cards implements UserCardRepository {
+    public static class Lexemes implements LexemeRepository {
 
-        final List<UserCard> all = new ArrayList<>();
+        public final Map<Long, Lexeme> byId = new LinkedHashMap<>();
+        private long nextId = 500;
+
+        @Override
+        public Lexeme save(Lexeme lexeme) {
+            boolean duplicate = byId.values().stream().anyMatch(existing -> !existing.id().equals(lexeme.id())
+                    && existing.language() == lexeme.language()
+                    && existing.normalizedText().equals(lexeme.normalizedText()));
+            if (duplicate) {
+                throw new IllegalStateException("duplicate lexeme " + lexeme.normalizedText());
+            }
+            long id = lexeme.id() != null ? lexeme.id() : nextId++;
+            var saved = new Lexeme(id, lexeme.language(), lexeme.text(), lexeme.normalizedText(),
+                    lexeme.partOfSpeech(), lexeme.ipa(), lexeme.ipaSource(), lexeme.meanings());
+            byId.put(id, saved);
+            return saved;
+        }
+
+        @Override
+        public Optional<Lexeme> findById(long id) {
+            return Optional.ofNullable(byId.get(id));
+        }
+
+        @Override
+        public Optional<Lexeme> findByLanguageAndNormalizedText(Language language, String normalizedText) {
+            return byId.values().stream()
+                    .filter(l -> l.language() == language && l.normalizedText().equals(normalizedText))
+                    .findFirst();
+        }
+    }
+
+    public static class Examples implements ExampleRepository {
+
+        public final List<Example> all = new ArrayList<>();
+        private long nextId = 5000;
+
+        @Override
+        public List<Example> saveAll(List<Example> examples) {
+            var saved = examples.stream()
+                    .map(e -> new Example(nextId++, e.lexemeId(), e.text(), e.level(), e.translations()))
+                    .toList();
+            all.addAll(saved);
+            return saved;
+        }
+
+        @Override
+        public List<Example> findByLexemeId(long lexemeId) {
+            return all.stream().filter(e -> e.lexemeId() == lexemeId).toList();
+        }
+    }
+
+    public static class Cards implements UserCardRepository {
+
+        public final List<UserCard> all = new ArrayList<>();
         private long nextId = 1000;
 
         @Override
@@ -87,9 +144,9 @@ class InMemoryRepositories {
         }
     }
 
-    static class Profiles implements LearningProfileRepository {
+    public static class Profiles implements LearningProfileRepository {
 
-        final Map<Long, LearningProfile> byId = new LinkedHashMap<>();
+        public final Map<Long, LearningProfile> byId = new LinkedHashMap<>();
         private long nextId = 100;
 
         @Override

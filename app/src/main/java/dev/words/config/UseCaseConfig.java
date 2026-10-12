@@ -1,6 +1,9 @@
 package dev.words.config;
 
+import dev.words.application.port.ExampleRepository;
 import dev.words.application.port.LearningProfileRepository;
+import dev.words.application.port.LexemeRepository;
+import dev.words.application.port.LlmPort;
 import dev.words.application.port.PronunciationPort;
 import dev.words.application.port.UserCardRepository;
 import dev.words.application.port.UserRepository;
@@ -8,6 +11,7 @@ import dev.words.application.profile.CreateProfile;
 import dev.words.application.profile.ListProfiles;
 import dev.words.application.profile.SwitchProfile;
 import dev.words.application.user.RegisterUser;
+import dev.words.application.word.AddWord;
 import dev.words.application.word.PronunciationResolver;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -52,5 +56,12 @@ class UseCaseConfig {
     @Bean
     PronunciationResolver pronunciationResolver(PronunciationPort pronunciations) {
         return new PronunciationResolver(pronunciations);
+    }
+
+    @Bean
+    AddWord addWord(UserRepository users, LearningProfileRepository profiles, LexemeRepository lexemes,
+                    ExampleRepository examples, UserCardRepository cards, LlmPort llm,
+                    PronunciationResolver pronunciations, Clock clock) {
+        return new AddWord(users, profiles, lexemes, examples, cards, llm, pronunciations, clock);
     }
 }

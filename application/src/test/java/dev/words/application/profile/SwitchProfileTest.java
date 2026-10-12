@@ -1,6 +1,7 @@
 package dev.words.application.profile;
 
 import dev.words.application.error.NotFoundException;
+import dev.words.application.fake.InMemoryRepositories;
 import dev.words.domain.CefrLevel;
 import dev.words.domain.Language;
 import dev.words.domain.User;
